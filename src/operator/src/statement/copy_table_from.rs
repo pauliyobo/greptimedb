@@ -209,6 +209,9 @@ impl StatementExecutor {
                 path,
                 schema,
             } => {
+                println!("Schema: {:?}", schema);
+                println!("Compat schema: {:?}", compat_schema);
+                println!("Projection: {:?}", projection);
                 let output_schema = Arc::new(
                     compat_schema
                         .project(&projection)
@@ -231,6 +234,7 @@ impl StatementExecutor {
                 .await
                 .context(error::BuildFileStreamSnafu)?;
 
+                println!("Output schema: {:?}", output_schema);
                 Ok(Box::pin(
                     // The projection is already applied in the CSV reader when we created the stream,
                     // so we pass None here to avoid double projection which would cause schema mismatch errors.
@@ -527,13 +531,18 @@ fn generated_schema_projection_and_compatible_file_schema(
     file: &SchemaRef,
     table: &SchemaRef,
 ) -> (Vec<usize>, Vec<usize>, Schema) {
+    println!("file schema: {:?}", file);
+    println!("Table schema: {:?}", table);
     let mut file_projection = Vec::with_capacity(file.fields.len());
     let mut table_projection = Vec::with_capacity(file.fields.len());
     let mut compatible_fields = file.fields.iter().cloned().collect::<Vec<_>>();
     for (file_idx, file_field) in file.fields.iter().enumerate() {
-        if let Some((table_idx, table_field)) = table.fields.find(file_field.name()) {
+        // We compare the file and table column in the same position
+        // if their datatype match, we'll include them in the final schema
+        // This check will ensure that even if we parse a file with different column names, e.g. because of an headerless CSV, the final schema will still be accurate
+        if let Some(table_field) = table.fields.get(file_idx) {
             file_projection.push(file_idx);
-            table_projection.push(table_idx);
+            table_projection.push(file_idx);
 
             // Safety: the compatible_fields has same length as file schema
             compatible_fields[file_idx] = table_field.clone();

@@ -49,6 +49,7 @@ impl TryFrom<&HashMap<String, String>> for CsvFormat {
     type Error = error::Error;
 
     fn try_from(value: &HashMap<String, String>) -> Result<Self> {
+        println!("{:?}", value);
         let mut format = CsvFormat::default();
         if let Some(delimiter) = value.get(file_format::FORMAT_DELIMITER) {
             // TODO(weny): considers to support parse like "\t" (not only b'\t')
@@ -84,6 +85,7 @@ impl TryFrom<&HashMap<String, String>> for CsvFormat {
                 .build()
             })?;
         };
+        println!("has_header: {}", format.has_header);
         if let Some(timestamp_format) = value.get(file_format::TIMESTAMP_FORMAT) {
             format.timestamp_format = Some(timestamp_format.clone());
         }
