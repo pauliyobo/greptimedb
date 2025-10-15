@@ -523,6 +523,17 @@ fn ensure_schema_compatible(from: &SchemaRef, to: &SchemaRef) -> Result<()> {
     }
 }
 
+/// Determines whether two field data types are compatible
+fn is_datatype_compatible(file_type: &ArrowDataType, table_type: &ArrowDataType) -> bool {
+    match (file_type, table_type) {
+        (ArrowDataType::Timestamp(_, file_tz), ArrowDataType::Timestamp(_, table_tz)) => file_tz == table_tz,
+        (a, b) if a.is_nested() & b.is_nested() => a.equals_datatype(b),
+        (a, b) if a.is_primitive() & b.is_primitive() => true,
+        (a, b) if a.is_temporal() & b.is_temporal() => true,
+        (a, b) => a == b,
+    }
+}
+
 /// Generates a maybe compatible schema of the file schema.
 ///
 /// If there is a field is found in table schema,
@@ -540,7 +551,7 @@ fn generated_schema_projection_and_compatible_file_schema(
         // We compare the file and table column in the same position
         // if their datatype match, we'll include them in the final schema
         // This check will ensure that even if we parse a file with different column names, e.g. because of an headerless CSV, the final schema will still be accurate
-        if let Some(table_field) = table.fields.get(file_idx) {
+        if let Some(table_field) = table.fields.get(file_idx) && is_datatype_compatible(file_field.data_type(), table_field.data_type()) {
             file_projection.push(file_idx);
             table_projection.push(file_idx);
 
