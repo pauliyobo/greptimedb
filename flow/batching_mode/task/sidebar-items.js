@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["MAX_INCREMENTAL_DIRTY_WINDOW_FILTERS"],"enum":["DirtyRestore"],"fn":["determine_query_type","is_merge_mode_last_non_null"],"mod":["ckpt","inc"],"struct":["BatchingTask","PlanInfo","TaskArgs","TaskConfig"]};
